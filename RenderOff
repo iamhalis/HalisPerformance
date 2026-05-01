@@ -1,0 +1,147 @@
+pcall(function()
+	local cg = game:GetService("CoreGui")
+	if cg:FindFirstChild("PerformanceBoostUI") then
+		cg.PerformanceBoostUI:Destroy()
+	end
+end)
+
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local blackEnabled = false
+local renderDisabled = false
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "PerformanceBoostUI"
+gui.Parent = CoreGui
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+gui.DisplayOrder = 999999
+
+-- Overlay
+local overlay = Instance.new("Frame")
+overlay.Parent = gui
+overlay.Size = UDim2.fromScale(1,1)
+overlay.Position = UDim2.fromScale(0,0)
+overlay.BackgroundColor3 = Color3.new(0,0,0)
+overlay.BorderSizePixel = 0
+overlay.Visible = false
+overlay.ZIndex = 999998
+
+-- Main Panel
+local panel = Instance.new("Frame")
+panel.Parent = gui
+panel.Size = UDim2.new(0,220,0,130)
+panel.Position = UDim2.new(0,20,0.5,-65)
+panel.BackgroundColor3 = Color3.fromRGB(20,20,20)
+panel.BorderSizePixel = 0
+panel.ZIndex = 1000000
+
+local panelCorner = Instance.new("UICorner")
+panelCorner.CornerRadius = UDim.new(0,12)
+panelCorner.Parent = panel
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Parent = panel
+title.Size = UDim2.new(1,0,0,30)
+title.BackgroundTransparency = 1
+title.Text = "Performance Boost"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+title.ZIndex = 1000001
+
+-- Button creator
+local function createButton(text, yPos)
+	local btn = Instance.new("TextButton")
+	btn.Parent = panel
+	btn.Size = UDim2.new(0.9,0,0,35)
+	btn.Position = UDim2.new(0.05,0,0,yPos)
+	btn.BackgroundColor3 = Color3.fromRGB(35,35,35)
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextScaled = true
+	btn.Text = text
+	btn.BorderSizePixel = 0
+	btn.ZIndex = 1000001
+
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0,8)
+	c.Parent = btn
+
+	return btn
+end
+
+local blackBtn = createButton("Black Screen: OFF", 38)
+local renderBtn = createButton("3D Render: ON", 78)
+
+-- Functions
+local function updateBlack()
+	overlay.Visible = blackEnabled
+	blackBtn.Text = blackEnabled and "Black Screen: ON" or "Black Screen: OFF"
+	blackBtn.BackgroundColor3 = blackEnabled and Color3.fromRGB(0,120,0) or Color3.fromRGB(35,35,35)
+end
+
+local function updateRender()
+	RunService:Set3dRenderingEnabled(not renderDisabled)
+	renderBtn.Text = renderDisabled and "3D Render: OFF" or "3D Render: ON"
+	renderBtn.BackgroundColor3 = renderDisabled and Color3.fromRGB(120,0,0) or Color3.fromRGB(35,35,35)
+end
+
+blackBtn.MouseButton1Click:Connect(function()
+	blackEnabled = not blackEnabled
+	updateBlack()
+end)
+
+renderBtn.MouseButton1Click:Connect(function()
+	renderDisabled = not renderDisabled
+	updateRender()
+end)
+
+-- Drag panel
+local dragging = false
+local dragStart, startPos
+
+panel.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = panel.Position
+	end
+end)
+
+panel.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		panel.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- Hotkey F8 = toggle both
+UserInputService.InputBegan:Connect(function(input, gp)
+	if not gp and input.KeyCode == Enum.KeyCode.F8 then
+		blackEnabled = not blackEnabled
+		renderDisabled = not renderDisabled
+		updateBlack()
+		updateRender()
+	end
+end)
+
+-- Init
+updateBlack()
+updateRender()
