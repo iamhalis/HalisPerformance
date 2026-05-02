@@ -15,9 +15,8 @@ local blackEnabled = false
 local renderDisabled = false
 local fpsCap = 15
 
--- =========================
--- FPS CAP
--- =========================
+-- FPS CAP --
+
 local function applyFPSCap()
 	if setfpscap then
 		pcall(function()
@@ -26,9 +25,7 @@ local function applyFPSCap()
 	end
 end
 
--- =========================
--- Anti AFK
--- =========================
+-- Anti AFK --
 local LocalPlayer = Players.LocalPlayer
 
 pcall(function()
@@ -48,9 +45,7 @@ task.spawn(function()
 	end
 end)
 
--- =========================
--- GUI
--- =========================
+-- GUI --
 local gui = Instance.new("ScreenGui")
 gui.Name = "PerformanceBoostUI"
 gui.Parent = CoreGui
@@ -87,7 +82,7 @@ local title = Instance.new("TextLabel")
 title.Parent = panel
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "Performance Boost"
+title.Text = "Halis Performance"
 title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Font = Enum.Font.GothamBold
 title.TextScaled = true
