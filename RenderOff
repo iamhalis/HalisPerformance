@@ -5,18 +5,23 @@ pcall(function()
 	end
 end)
 
+--================ SERVICES ================
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local Players = game:GetService("Players")
 
+-- cần LocalPlayer để anti-afk / tránh lỗi nil
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+
+--================ STATES ================
 local blackEnabled = false
 local renderDisabled = false
 local fpsCap = 15
+local uiVisible = true
 
--- FPS CAP --
-
+--================ FPS CAP ================
 local function applyFPSCap()
 	if setfpscap then
 		pcall(function()
@@ -25,9 +30,7 @@ local function applyFPSCap()
 	end
 end
 
--- Anti AFK --
-local LocalPlayer = Players.LocalPlayer
-
+--================ ANTI AFK ================
 pcall(function()
 	LocalPlayer.Idled:Connect(function()
 		VirtualUser:CaptureController()
@@ -45,18 +48,18 @@ task.spawn(function()
 	end
 end)
 
--- GUI --
-local gui = Instance.new("ScreenGui")
-gui.Name = "PerformanceBoostUI"
-gui.Parent = CoreGui
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-gui.DisplayOrder = 999999
+--================ GUI ================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PerformanceBoostUI"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+ScreenGui.DisplayOrder = 999999
 
 -- Overlay
 local overlay = Instance.new("Frame")
-overlay.Parent = gui
+overlay.Parent = ScreenGui
 overlay.Size = UDim2.fromScale(1,1)
 overlay.Position = UDim2.fromScale(0,0)
 overlay.BackgroundColor3 = Color3.new(0,0,0)
@@ -64,22 +67,20 @@ overlay.BorderSizePixel = 0
 overlay.Visible = false
 overlay.ZIndex = 999998
 
--- Main Panel
-local panel = Instance.new("Frame")
-panel.Parent = gui
-panel.Size = UDim2.new(0,240,0,190)
-panel.Position = UDim2.new(0,20,0.5,-95)
-panel.BackgroundColor3 = Color3.fromRGB(20,20,20)
-panel.BorderSizePixel = 0
-panel.ZIndex = 1000000
+-- MainFrame
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0,240,0,190)
+MainFrame.Position = UDim2.new(0,20,0.5,-95)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+MainFrame.BorderSizePixel = 0
+MainFrame.ZIndex = 1000000
 
-local panelCorner = Instance.new("UICorner")
-panelCorner.CornerRadius = UDim.new(0,12)
-panelCorner.Parent = panel
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0,12)
 
 -- Title
 local title = Instance.new("TextLabel")
-title.Parent = panel
+title.Parent = MainFrame
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
 title.Text = "Halis Performance"
@@ -88,10 +89,21 @@ title.Font = Enum.Font.GothamBold
 title.TextScaled = true
 title.ZIndex = 1000001
 
--- Button creator
+--================ BASE LOGO ================
+local ToggleButton = Instance.new("ImageButton")
+ToggleButton.Parent = ScreenGui
+ToggleButton.Size = UDim2.new(0,70,0,70)
+ToggleButton.Position = UDim2.new(0,40,0,40)
+ToggleButton.BackgroundTransparency = 1
+ToggleButton.Image = "rbxassetid://93595762651250"
+ToggleButton.ZIndex = 1000002
+
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(1,0)
+
+--================ BUTTON CREATOR ================
 local function createButton(text, yPos)
 	local btn = Instance.new("TextButton")
-	btn.Parent = panel
+	btn.Parent = MainFrame
 	btn.Size = UDim2.new(0.9,0,0,35)
 	btn.Position = UDim2.new(0.05,0,0,yPos)
 	btn.BackgroundColor3 = Color3.fromRGB(35,35,35)
@@ -113,7 +125,7 @@ local blackBtn = createButton("Black Screen: OFF", 38)
 local renderBtn = createButton("3D Render: ON", 78)
 local fpsBtn = createButton("FPS Cap: 15", 118)
 
--- Functions
+--================ FUNCTIONS ================
 local function updateBlack()
 	overlay.Visible = blackEnabled
 	blackBtn.Text = blackEnabled and "Black Screen: ON" or "Black Screen: OFF"
@@ -135,6 +147,7 @@ local function updateFPS()
 	fpsBtn.BackgroundColor3 = Color3.fromRGB(0,90,140)
 end
 
+--================ EVENTS ================
 blackBtn.MouseButton1Click:Connect(function()
 	blackEnabled = not blackEnabled
 	updateBlack()
@@ -145,12 +158,11 @@ renderBtn.MouseButton1Click:Connect(function()
 	updateRender()
 end)
 
--- Cycle FPS values
 local fpsModes = {15, 30, 60}
 local fpsIndex = 1
 
 fpsBtn.MouseButton1Click:Connect(function()
-	fpsIndex = fpsIndex + 1
+	fpsIndex += 1
 	if fpsIndex > #fpsModes then
 		fpsIndex = 1
 	end
@@ -158,37 +170,48 @@ fpsBtn.MouseButton1Click:Connect(function()
 	updateFPS()
 end)
 
--- Drag panel
-local dragging = false
-local dragStart, startPos
-
-panel.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = panel.Position
-	end
+-- Toggle UI
+ToggleButton.MouseButton1Click:Connect(function()
+	uiVisible = not uiVisible
+	MainFrame.Visible = uiVisible
 end)
 
-panel.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
-	end
-end)
+--================ DRAG SYSTEM ================
+local function makeDraggable(gui)
+	local dragging = false
+	local dragStart, startPos
 
-UserInputService.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		panel.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-	end
-end)
+	gui.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = gui.Position
+		end
+	end)
 
--- Hotkey F8 = toggle black/render
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - dragStart
+			gui.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
+end
+
+makeDraggable(MainFrame)
+makeDraggable(ToggleButton)
+
+-- Hotkey F8
 UserInputService.InputBegan:Connect(function(input, gp)
 	if not gp and input.KeyCode == Enum.KeyCode.F8 then
 		blackEnabled = not blackEnabled
@@ -198,7 +221,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	end
 end)
 
--- Init
+--================ INIT ================
 updateBlack()
 updateRender()
 updateFPS()
