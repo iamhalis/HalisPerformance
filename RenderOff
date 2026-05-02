@@ -8,11 +8,49 @@ end)
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+local Players = game:GetService("Players")
 
 local blackEnabled = false
 local renderDisabled = false
+local fpsCap = 15
 
+-- =========================
+-- FPS CAP
+-- =========================
+local function applyFPSCap()
+	if setfpscap then
+		pcall(function()
+			setfpscap(fpsCap)
+		end)
+	end
+end
+
+-- =========================
+-- Anti AFK
+-- =========================
+local LocalPlayer = Players.LocalPlayer
+
+pcall(function()
+	LocalPlayer.Idled:Connect(function()
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new(0,0))
+	end)
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(300)
+		pcall(function()
+			VirtualUser:CaptureController()
+			VirtualUser:ClickButton2(Vector2.new(0,0))
+		end)
+	end
+end)
+
+-- =========================
 -- GUI
+-- =========================
 local gui = Instance.new("ScreenGui")
 gui.Name = "PerformanceBoostUI"
 gui.Parent = CoreGui
@@ -34,8 +72,8 @@ overlay.ZIndex = 999998
 -- Main Panel
 local panel = Instance.new("Frame")
 panel.Parent = gui
-panel.Size = UDim2.new(0,220,0,130)
-panel.Position = UDim2.new(0,20,0.5,-65)
+panel.Size = UDim2.new(0,240,0,190)
+panel.Position = UDim2.new(0,20,0.5,-95)
 panel.BackgroundColor3 = Color3.fromRGB(20,20,20)
 panel.BorderSizePixel = 0
 panel.ZIndex = 1000000
@@ -78,6 +116,7 @@ end
 
 local blackBtn = createButton("Black Screen: OFF", 38)
 local renderBtn = createButton("3D Render: ON", 78)
+local fpsBtn = createButton("FPS Cap: 15", 118)
 
 -- Functions
 local function updateBlack()
@@ -87,9 +126,18 @@ local function updateBlack()
 end
 
 local function updateRender()
-	RunService:Set3dRenderingEnabled(not renderDisabled)
+	pcall(function()
+		RunService:Set3dRenderingEnabled(not renderDisabled)
+	end)
+
 	renderBtn.Text = renderDisabled and "3D Render: OFF" or "3D Render: ON"
 	renderBtn.BackgroundColor3 = renderDisabled and Color3.fromRGB(120,0,0) or Color3.fromRGB(35,35,35)
+end
+
+local function updateFPS()
+	applyFPSCap()
+	fpsBtn.Text = "FPS Cap: "..fpsCap
+	fpsBtn.BackgroundColor3 = Color3.fromRGB(0,90,140)
 end
 
 blackBtn.MouseButton1Click:Connect(function()
@@ -100,6 +148,19 @@ end)
 renderBtn.MouseButton1Click:Connect(function()
 	renderDisabled = not renderDisabled
 	updateRender()
+end)
+
+-- Cycle FPS values
+local fpsModes = {15, 30, 60}
+local fpsIndex = 1
+
+fpsBtn.MouseButton1Click:Connect(function()
+	fpsIndex = fpsIndex + 1
+	if fpsIndex > #fpsModes then
+		fpsIndex = 1
+	end
+	fpsCap = fpsModes[fpsIndex]
+	updateFPS()
 end)
 
 -- Drag panel
@@ -132,7 +193,7 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Hotkey F8 = toggle both
+-- Hotkey F8 = toggle black/render
 UserInputService.InputBegan:Connect(function(input, gp)
 	if not gp and input.KeyCode == Enum.KeyCode.F8 then
 		blackEnabled = not blackEnabled
@@ -145,3 +206,4 @@ end)
 -- Init
 updateBlack()
 updateRender()
+updateFPS()
